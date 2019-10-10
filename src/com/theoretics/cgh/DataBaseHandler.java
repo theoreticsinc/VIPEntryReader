@@ -39,8 +39,8 @@ import javax.swing.JPanel;
 public class DataBaseHandler extends Thread {
 
     private String DRIVER_CLASS_NAME = "com.mysql.jdbc.Driver";
-    private String MainServer_URL = "";
-    private String SubServer_URL = "";
+    private String MainServer_URL = "jdbc:mysql://localhost/";
+    private String SubServer_URL = "jdbc:mysql://localhost/";
     //private String MainServer_URL = "jdbc:mysql://192.168.100.228/";
     //private String MainServer_URL = "jdbc:mysql://localhost/";
     //private String SubServer_URL = "jdbc:mysql://192.168.100.228/";
@@ -69,8 +69,8 @@ public class DataBaseHandler extends Thread {
         try {
             //XMLreader xr = new XMLreader();
             ///home/pi/JTerminals
-            MainServer_URL = "jdbc:mysql://" + serverIP + "";
-            SubServer_URL = "jdbc:mysql://" + serverIP + "";
+            //MainServer_URL = "jdbc:mysql://" + serverIP + "";
+            //SubServer_URL = "jdbc:mysql://" + serverIP + "";
             //MainServer_URL = "jdbc:mysql://" + xr.getElementValue("/home/pi/net.xml", "main1") + "";
             //SubServer_URL = "jdbc:mysql://" + xr.getElementValue("/home/pi/net.xml", "sub1") + "";
             //getActiveRatesParameter();
@@ -117,6 +117,28 @@ public class DataBaseHandler extends Thread {
         }
 
         return res;
+    }
+    
+    public String findVIPcard(String cardCode) {
+        String temp = "";
+        try {            
+            connection = getConnection(true);
+            st = (Statement) connection.createStatement();
+
+            connection = getConnection(true);
+            ResultSet rs = selectDatabyFields("SELECT * FROM vips.lpdh WHERE cardCode = '" + cardCode + "'");
+            if (rs.next()) {
+                temp = rs.getString("cardNumber");
+                st.close();
+                connection.close();
+                return temp;
+            } else {
+                return temp;
+            }
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+            return temp;
+        }
     }
 
     public void insertImageFromURLToDB() {

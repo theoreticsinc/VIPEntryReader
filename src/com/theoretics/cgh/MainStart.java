@@ -429,6 +429,19 @@ public class MainStart {
 
                     System.out.println("Card Read UID:" + strUID.substring(0, 8));
                     cardFromReader = strUID.substring(0, 8).toUpperCase();
+                    DataBaseHandler dbh = new DataBaseHandler();
+                    String cardNum = dbh.findVIPcard(cardFromReader);
+                    if (cardNum.compareTo("") != 0) {
+                        relayBarrier.low(); //RELAY ON
+                        System.out.println("Barrier Open!");
+                        try {
+                            Thread.sleep(500);
+                            relayBarrier.high();
+                            Thread.sleep(1500);
+                        } catch (InterruptedException ex) {
+                            Logger.getLogger(MainStart.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
 //
 //                    if (cardFromReader.compareToIgnoreCase("") != 0) {
 //                        cards.add(cardFromReader);
@@ -437,18 +450,12 @@ public class MainStart {
 //                        //comPort.writeBytes(buffer2, 1);
 //                    }
 
-                    relayBarrier.low(); //RELAY ON
-                    System.out.println("Barrier Open!");
+                    
                     // turn on gpio pin1 #01 for 1 second and then off
                         //System.out.println("--> GPIO state should be: ON for only 3 second");
                         // set second argument to 'true' use a blocking call
 //                    c.showWelcome(700, false);
-                    try {
-                        Thread.sleep(1500);
-                        relayBarrier.high();
-                    } catch (InterruptedException ex) {
-                        Logger.getLogger(MainStart.class.getName()).log(Level.SEVERE, null, ex);
-                    }
+                    
                 }
             }
             rc522.Stop_Crypto();
