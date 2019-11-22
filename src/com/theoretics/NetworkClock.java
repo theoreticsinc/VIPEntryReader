@@ -3,10 +3,10 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.theoretics.cgh;
+package com.theoretics;
 
-import com.theoretics.cgh.DataBaseHandler;
-import com.theoretics.cgh.SystemStatus;
+import com.theoretics.DataBaseHandler;
+import com.theoretics.SystemStatus;
 import java.util.ArrayList;
 
 /**

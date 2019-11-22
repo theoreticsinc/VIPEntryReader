@@ -1,4 +1,4 @@
-package com.theoretics.cgh;
+package com.theoretics;
 
 import com.pi4j.wiringpi.Gpio;
 import com.pi4j.wiringpi.Spi;

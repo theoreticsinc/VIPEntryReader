@@ -7,7 +7,7 @@
  * the Source Creation and Management node. Right-click the template and choose
  * Open. You can then make changes to the template in the Source Editor.
  */
-package com.theoretics.cgh;
+package com.theoretics;
 
 /**
  *
@@ -62,15 +62,16 @@ public class DataBaseHandler extends Thread {
     private String dateTimePaidStamp;
 
     public DataBaseHandler() {
-
+            MainServer_URL = "jdbc:mysql://" + CONSTANTS.serverIP + "";
+            SubServer_URL = "jdbc:mysql://" + CONSTANTS.serverIP + "";
     }
 
     public DataBaseHandler(String serverIP) {
         try {
             //XMLreader xr = new XMLreader();
             ///home/pi/JTerminals
-            //MainServer_URL = "jdbc:mysql://" + serverIP + "";
-            //SubServer_URL = "jdbc:mysql://" + serverIP + "";
+            MainServer_URL = "jdbc:mysql://" + serverIP + "";
+            SubServer_URL = "jdbc:mysql://" + serverIP + "";
             //MainServer_URL = "jdbc:mysql://" + xr.getElementValue("/home/pi/net.xml", "main1") + "";
             //SubServer_URL = "jdbc:mysql://" + xr.getElementValue("/home/pi/net.xml", "sub1") + "";
             //getActiveRatesParameter();

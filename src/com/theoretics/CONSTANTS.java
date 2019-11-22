@@ -3,14 +3,15 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.theoretics.cgh;
+package com.theoretics;
 
 /**
  *
  * @author Theoretics Inc
  */
 public class CONSTANTS {
-    public static String serverIP = "192.168.1.80";
+    //public static String serverIP = "192.168.1.80";
+    public static String serverIP = "localhost";
     public static String entranceID = "Entry Zone 1";  //BOOTH 
     
     //public static String entranceID = "Entry Zone 2";  //BOOTH B

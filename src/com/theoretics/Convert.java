@@ -1,4 +1,4 @@
-package com.theoretics.cgh;
+package com.theoretics;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

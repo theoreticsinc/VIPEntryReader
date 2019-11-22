@@ -1,11 +1,11 @@
-package com.theoretics.cgh;
+package com.theoretics;
 
 /**
  * Created by Liang on 2016/3/13.
  */
 
 
-import com.theoretics.cgh.RaspRC522;
+import com.theoretics.RaspRC522;
 
 
 public class WiringPiSPIExample
