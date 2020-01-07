@@ -60,6 +60,11 @@ public class DataBaseHandler extends Thread {
     private String dateTimeINStamp;
     private String dateTimePaid;
     private String dateTimePaidStamp;
+    
+    Statement stmt = null;
+    PreparedStatement statement = null;
+    Connection conn = null;
+
 
     public DataBaseHandler() {
             MainServer_URL = "jdbc:mysql://" + CONSTANTS.serverIP + "";
@@ -126,10 +131,9 @@ public class DataBaseHandler extends Thread {
             connection = getConnection(true);
             st = (Statement) connection.createStatement();
 
-            connection = getConnection(true);
             ResultSet rs = selectDatabyFields("SELECT * FROM vips.lpdh WHERE cardCode = '" + cardCode + "'");
             if (rs.next()) {
-                temp = rs.getString("cardNumber");
+                temp = rs.getString("VIPname");
                 st.close();
                 connection.close();
                 return temp;
@@ -141,10 +145,52 @@ public class DataBaseHandler extends Thread {
             return temp;
         }
     }
+    
+    public boolean saveVIPused(String cardCode) {
+        boolean used = false;
+        try {
+            connection = getConnection(true);
+            st = (Statement) connection.createStatement();
+            String SQL = "INSERT INTO vips.logsheet (pkid, cardCode, datetimeIN) VALUES (NULL, '" + cardCode +"', NOW())";
+            st.execute(SQL);
+            st.close();
+            connection.close();
+            return true;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            System.out.println(ex.getMessage());
+            return false;
+        }
+    }
+    
+    
+    public boolean isVIPused(String cardCode) {
+        boolean used = false;
+        try {            
+            connection = getConnection(true);
+            st = (Statement) connection.createStatement();
 
-    public void insertImageFromURLToDB() {
-        Connection connection = null;
-        PreparedStatement statement = null;
+            ResultSet rs = selectDatabyFields("SELECT * FROM vips.logsheet WHERE cardCode = '" + cardCode + "'");
+            if (rs.next()) {
+                //temp = rs.getString("cardNumber");
+                used = true;
+                st.close();
+                connection.close();
+                return used;
+            } else {
+                return used;
+            }
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+            return used;
+        }
+    }
+    
+    
+    public boolean saveParkerDB(String ipaddress, String AreaID, String entranceID, String Card, String Plate, String TRType, boolean isLost) {
+        DataBaseHandler DB = new DataBaseHandler();
+        //DateTimeIN should now be null because Mysql is inserting a default timestamp
+        //DateTimeIN = "";
         URLConnection uc1 = null;
         URLConnection uc2 = null;
         InputStream is1 = null;
@@ -154,7 +200,7 @@ public class DataBaseHandler extends Thread {
 
             public boolean verify(String hostname,
                     javax.net.ssl.SSLSession sslSession) {
-                return hostname.equals(CONSTANTS.CAMipaddress);
+                return hostname.equals(ipaddress);
             }
         });
         Authenticator.setDefault(new Authenticator() {
@@ -167,74 +213,125 @@ public class DataBaseHandler extends Thread {
             String encoded = new sun.misc.BASE64Encoder().encode(loginPassword.getBytes());
 
             //URL url = new URL("http://www.avajava.com/images/avajavalogo.jpg");
-            //URL url = new URL("http://admin:user1234@192.168.1.64/Streaming/channels/1/picture");
-            //URL url = new URL("http://192.168.1.64/onvif-http/snapshot?Profile_1");
-            URL url = new URL("http://" + CONSTANTS.CAMusername + ":" + CONSTANTS.CAMpassword + "@" + CONSTANTS.CAMipaddress + "/onvif-http/snapshot?Profile_1");//HIKVISION IP Cameras
-            //URL url = new URL("http://192.168.1.190/onvifsnapshot/media_service/snapshot?channel=1&subtype=1");
-            //http://admin:user1234@192.168.1.64/onvif-http/snapshot?Profile_1
-            //URL url = new URL("http://admin:admin888888@192.168.1.190/cgi-bin/snapshot.cgi?loginuse=admin&loginpas=admin888888");
-            //HttpURLConnection yc = (HttpURLConnection) url.openConnection();
-            //yc.setRequestProperty("Authorization", "Basic " + encoded);
-            //InputStream is = url.openStream();
+            //HIKVISION IP Cameras Old Versions
+            //URL url = new URL("http://" + username + ":" + password + "@" + ipaddress + "/Streaming/channels/1/picture");
+            //HIKVISION IP Cameras
+            URL url1 = new URL("http://" + CONSTANTS.CAMusername + ":" + CONSTANTS.CAMpassword + "@" + CONSTANTS.CAMipaddress1 + "/onvif-http/snapshot?Profile_1");
+            URL url2 = new URL("http://" + CONSTANTS.CAMusername + ":" + CONSTANTS.CAMpassword + "@" + CONSTANTS.CAMipaddress2 + "/onvif-http/snapshot?Profile_1");
+            //HIKVISION DVR
+            //URL url = new URL("http://"+username+":"+password+"@"+ipaddress+"/onvifsnapshot/media_service/snapshot?channel=1&subtype=0");
+            //URL url = new URL("http://192.168.100.220/onvifsnapshot/media_service/snapshot?channel=1&subtype=1");
+            //URL url = new URL("http://admin:user1234@192.168.100.220/cgi-bin/snapshot.cgi?loginuse=admin&loginpas=user1234");
+            //GW Security
+            //URL url2 = new URL("http://" + CONSTANTS.CAMusername + ":" + CONSTANTS.CAMpassword + "@" + CONSTANTS.CAMipaddress2 + "/cgi-bin/snapshot.cgi?stream=0");
+            
             //**********************
-            uc1 = url.openConnection();
-            uc2 = url.openConnection();
-            uc1.setConnectTimeout(1000);
-            uc2.setConnectTimeout(1000);
+            uc1 = url1.openConnection();
+            uc2 = url2.openConnection();
             String userpass = CONSTANTS.CAMusername + ":" + CONSTANTS.CAMpassword;
             //String userpass = "root" + ":" + "Th30r3t1cs";
             String basicAuth = "Basic " + new String(new sun.misc.BASE64Encoder().encode(userpass.getBytes()));
             uc1.setRequestProperty("Authorization", basicAuth);
             uc2.setRequestProperty("Authorization", basicAuth);
-            //InputStream in = uc.getInputStream();
 
-//if (yc.getResponseCode() == HttpURLConnection.HTTP_UNAUTHORIZED) {
-//     // Step 3. Create a authentication object from the challenge...
-//     DigestAuthentication auth = DigestAuthentication.fromResponse(connection);
-//     // ...with correct credentials
-//     auth.username("user").password("passwd");
-//
-//     // Step 4 (Optional). Check if the challenge was a digest challenge of a supported type
-//     if (!auth.canRespond()) {
-//         // No digest challenge or a challenge of an unsupported type - do something else or fail
-//         return;
-//     }
-//
-//     // Step 5. Create a new connection, identical to the original one.
-//     yc = (HttpURLConnection) url.openConnection();
-//     // ...and set the Authorization header on the request, with the challenge response
-//     yc.setRequestProperty(DigestChallengeResponse.HTTP_HEADER_AUTHORIZATION,
-//         auth.getAuthorizationForRequest("GET", yc.getURL().getPath()));
-// }
-            /*
-            is1 = (InputStream) uc1.getInputStream();
-            is2 = (InputStream) uc2.getInputStream();
-            connection = getConnection(false);
-            statement = connection.prepareStatement("insert into unidb.timeindb(CardCode, Plate, PIC2, PIC) " + "values(?,?,?,?)");
-            statement.setString(1, "HFJ93230");
-            statement.setString(2, "ABCDEFG");
-            statement.setBinaryStream(3, is1, 1024 * 32); //Last Parameter has to be bigger than actual 
-            statement.setBinaryStream(4, is2, 1024 * 32); //Last Parameter has to be bigger than actual 
-            */
-            //statement.executeUpdate();
+            uc1.setConnectTimeout(1000);
+            uc2.setConnectTimeout(1000);
+            try {
+                if (null != uc1) {
+                    is1 = (InputStream) uc1.getInputStream();
+                }
+            } catch (Exception ex) {
+//                ex.printStackTrace();
+            }
+            try {
+                if (null != uc2) {
+                    is2 = (InputStream) uc2.getInputStream();
+                }
+            } catch (Exception ex) {
+//                ex.printStackTrace();
+            }
+
+            conn = DB.getConnection(true);
+            //WITH CAMERA TO DATABASE
+            //int status2 = stmt.executeUpdate("INSERT INTO crdplt.main (areaID, entranceID, cardNumber, plateNumber, trtype, isLost, datetimeIN, datetimeINStamp) "
+            //        + "VALUES ('" + AreaID + "', '" + entranceID + "', '" + Card + "', '" + Plate + "', '" + TRType + "', '0', '" + DateTimeIN + "','" + timeStampIN.toString() + "')");
+            //String SQL = "INSERT INTO unidb.timeindb (`ID`, `CardCode`, `Vehicle`, `Plate`, `Operator`, `PC`, `PIC`, `PIC2`, `Lane`, `Timein`) VALUES "
+            //        + "(NULL, ?, 'CAR' , ?, NULL, ?, ?, ?, 'ENTRY', ?)";
+            String SQL = "";
+            statement = conn.prepareStatement(SQL);
+            if (null != is1 && null != is2) {
+                SQL = "INSERT INTO crdplt.main (areaID, entranceID, cardNumber, plateNumber, trtype, isLost, datetimeIN, datetimeINStamp, PIC, PIC2) VALUES "
+                        + "(?, ?, ?, ?, ?, ?, NOW(), UNIX_TIMESTAMP(), ?, ?)";
+                statement = conn.prepareStatement(SQL);
+                statement.setBinaryStream(7, is1, 1024 * 1024); //Last Parameter has to be bigger than actual      
+                statement.setBinaryStream(8, is2, 1024 * 1024); //Last Parameter has to be bigger than actual 
+            }
+            if (null == is1 && null != is2) {
+                SQL = "INSERT INTO crdplt.main (areaID, entranceID, cardNumber, plateNumber, trtype, isLost, datetimeIN, datetimeINStamp, PIC, PIC2) VALUES "
+                        + "(?, ?, ?, ?, ?, ?, NOW(), UNIX_TIMESTAMP(), NULL, ?)";
+                statement = conn.prepareStatement(SQL);
+                statement.setBinaryStream(7, is2, 1024 * 1024); //Last Parameter has to be bigger than actual 
+            }
+            if (null != is1 && null == is2) {
+                SQL = "INSERT INTO crdplt.main (areaID, entranceID, cardNumber, plateNumber, trtype, isLost, datetimeIN, datetimeINStamp, PIC, PIC2) VALUES "
+                        + "(?, ?, ?, ?, ?, ?, NOW(), UNIX_TIMESTAMP(), ?, NULL)";
+                statement = conn.prepareStatement(SQL);
+                statement.setBinaryStream(7, is1, 1024 * 1024); //Last Parameter has to be bigger than actual 
+            }
+            if (null == is1 && null == is2) {
+                SQL = "INSERT INTO crdplt.main (areaID, entranceID, cardNumber, plateNumber, trtype, isLost, datetimeIN, datetimeINStamp, PIC, PIC2) VALUES "
+                        + "(?, ?, ?, ?, ?, ?, NOW(), UNIX_TIMESTAMP(), NULL, NULL)";
+                statement = conn.prepareStatement(SQL);
+            }
+            statement.setString(1, AreaID);
+            statement.setString(2, entranceID);
+            statement.setString(3, Card);
+            statement.setString(4, Plate);
+            statement.setString(5, TRType);
+            statement.setBoolean(6, isLost);
+
+            statement.executeUpdate();
+
+            //int status2 = stmt.executeUpdate("INSERT INTO unidb.timeindb (ID, CardCode, Vehicle, Plate, Timein, Operator, PC, PIC, PIC2, Lane) "
+            //        + "VALUES (NULL, '" + Card + "', 'CAR', '" + Plate + "', NOW(), NULL, '" + EntryID + "', NULL, NULL, 'LANE')");
+            //int status2 = stmt.executeUpdate("INSERT INTO crdplt.main (areaID, entranceID, cardNumber, plateNumber, trtype, isLost, datetimeIN, datetimeINStamp) "
+            //        + "VALUES ('" + AreaID + "', '" + entranceID + "', '" + Card + "', '" + Plate + "', '" + TRType + "', '0', '" + DateTimeIN + "','" + timeStampIN.toString() + "')");
+            return true;
         } catch (FileNotFoundException e) {
-            System.out.println("FileNotFoundException: - " + e);
+            //System.out.println("FileNotFoundException: - " + e);
         } catch (Exception e) {
-            System.out.println("Exception: - " + e);
+            System.out.println("Save2DB Exception: - " + e);
         } finally {
 
-        }
-        
             try {
-                statement.executeUpdate();
-                connection.close();
+                conn.close();
                 statement.close();
                 is1.close();
                 is2.close();
             } catch (Exception e) {
                 System.out.println("Exception Finally: - " + e);
             }
+        }
+        return false;
     }
+
+    
+    public boolean sendMessage(int msgCategory, String msgBody, String msgSignature, String recipient) {
+        try {
+            connection = getConnection(true);
+            st = (Statement) connection.createStatement();
+            String SQL = "INSERT INTO message_board.vips (pkid, msgCategory, msgBody, msgSignature, recipient) VALUES (NULL, '" + msgCategory +"', '" + msgBody +"', '" + msgSignature +"', '" + recipient + "')";
+            st.execute(SQL);
+            st.close();
+            connection.close();
+            return true;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            System.out.println(ex.getMessage());
+            return false;
+        }
+    }
+
 
     public boolean writeCGHEntryWithPix(String EntryID, String CardNumber, String trtype, String DateIN) {
         Connection connection = null;
@@ -248,7 +345,7 @@ public class DataBaseHandler extends Thread {
 
             public boolean verify(String hostname,
                     javax.net.ssl.SSLSession sslSession) {
-                return hostname.equals(CONSTANTS.CAMipaddress);
+                return hostname.equals(CONSTANTS.CAMipaddress1);
             }
         });
         Authenticator.setDefault(new Authenticator() {
@@ -273,7 +370,7 @@ public class DataBaseHandler extends Thread {
             String loginPassword = CONSTANTS.CAMusername + ":" + CONSTANTS.CAMpassword;
             String encoded = new sun.misc.BASE64Encoder().encode(loginPassword.getBytes());
 
-            URL url = new URL("http://" + CONSTANTS.CAMusername + ":" + CONSTANTS.CAMpassword + "@" + CONSTANTS.CAMipaddress + "/onvif-http/snapshot?Profile_1");//HIKVISION IP Cameras
+            URL url = new URL("http://" + CONSTANTS.CAMusername + ":" + CONSTANTS.CAMpassword + "@" + CONSTANTS.CAMipaddress1 + "/onvif-http/snapshot?Profile_1");//HIKVISION IP Cameras
 
             //**********************
             uc1 = url.openConnection();
@@ -1132,7 +1229,7 @@ public class DataBaseHandler extends Thread {
 
             public boolean verify(String hostname,
                     javax.net.ssl.SSLSession sslSession) {
-                return hostname.equals(CONSTANTS.CAMipaddress);
+                return hostname.equals(CONSTANTS.CAMipaddress1);
             }
         });
         Authenticator.setDefault(new Authenticator() {
@@ -1144,7 +1241,7 @@ public class DataBaseHandler extends Thread {
             String loginPassword = CONSTANTS.CAMusername + ":" + CONSTANTS.CAMpassword;
             String encoded = new sun.misc.BASE64Encoder().encode(loginPassword.getBytes());
 
-            URL url = new URL("http://" + CONSTANTS.CAMusername + ":" + CONSTANTS.CAMpassword + "@" + CONSTANTS.CAMipaddress + "/onvif-http/snapshot?Profile_1");//HIKVISION IP Cameras
+            URL url = new URL("http://" + CONSTANTS.CAMusername + ":" + CONSTANTS.CAMpassword + "@" + CONSTANTS.CAMipaddress1 + "/onvif-http/snapshot?Profile_1");//HIKVISION IP Cameras
 
             //**********************
             uc1 = url.openConnection();

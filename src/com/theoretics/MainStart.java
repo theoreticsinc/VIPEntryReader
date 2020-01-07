@@ -586,10 +586,19 @@ public class MainStart {
             if (null != text) {
                 try {
                     System.out.println("RAW: " + text);
-                cardUID = Long.toHexString(Long.parseLong(text));
-                //cardUID = Integer.toHexString(Integer.parseInt(text));
-                cardUID = cardUID.toUpperCase();
-                System.out.println("UID: " + cardUID.substring(6, 8) + cardUID.substring(4, 6) + cardUID.substring(2, 4) + cardUID.substring(0, 2));
+                    cardUID = Long.toHexString(Long.parseLong(text));
+                    if (text.startsWith("0")) {
+                        cardUID = "0" + cardUID;
+                    } else if (text.startsWith("00")) {
+                        cardUID = "00" + cardUID;
+                    } else if (text.startsWith("000")) {
+                        cardUID = "000" + cardUID;
+                    } else if (text.startsWith("0000")) {
+                        cardUID = "0000" + cardUID;
+                    }
+                    //cardUID = Integer.toHexString(Integer.parseInt(text));
+                    cardUID = cardUID.toUpperCase();
+                    System.out.println("UID: " + cardUID.substring(6, 8) + cardUID.substring(4, 6) + cardUID.substring(2, 4) + cardUID.substring(0, 2));
                 } catch (Exception ex) {
                     System.err.println("Card Conversion: " + ex);
                 }
@@ -602,16 +611,25 @@ public class MainStart {
                     System.out.println("Card Read UID:" + strUID.substring(0, 8));
                     cardFromReader = strUID.substring(0, 8).toUpperCase();
                     DataBaseHandler dbh = new DataBaseHandler();
-                    String cardNum = dbh.findVIPcard(cardFromReader);
-                    if (cardNum.compareTo("") != 0) {
-                        relayBarrier.low(); //RELAY ON
-                        System.out.println("Barrier Open!");
-                        try {
-                            Thread.sleep(500);
-                            relayBarrier.high();
-                            Thread.sleep(1500);
-                        } catch (InterruptedException ex) {
-                            Logger.getLogger(MainStart.class.getName()).log(Level.SEVERE, null, ex);
+                    String cardHolder = dbh.findVIPcard(cardFromReader);                    
+                    if (cardHolder.compareTo("") != 0) {
+                        boolean cardUsed = dbh.isVIPused(cardFromReader);
+                        if (cardUsed) {
+                            dbh.sendMessage(0, " VIP : " + cardHolder + " is Already Used", "VIP Entry", "EX01");                            
+                        } else {
+                            relayBarrier.low(); //RELAY ON
+                            System.out.println("Barrier Open!");
+                            boolean isValid = dbh.saveParkerDB(CONSTANTS.serverIP, "P01", "EN01", cardFromReader, "", "V", false);
+                            try {
+                                
+                                Thread.sleep(500);
+                                relayBarrier.high();
+                                Thread.sleep(1500);
+                                dbh.sendMessage(0, " Welcome " + cardHolder + "", "VIP Entry", "EX01"); 
+                                dbh.saveVIPused(cardFromReader);
+                            } catch (Exception ex) {
+                                Logger.getLogger(MainStart.class.getName()).log(Level.SEVERE, null, ex);
+                            }
                         }
                     } else if (cardFromReader.compareToIgnoreCase("3B40CB73") == 0) {
                         relayBarrier.low(); //RELAY ON
