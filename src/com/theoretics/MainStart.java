@@ -31,7 +31,7 @@ import javax.sound.sampled.Clip;
 public class MainStart {
 
     String version = "v.3.0.1";
-    String entranceID = "VIP CARD READER 1";
+    String entranceID = "VIP CARD ENTRY READER 1";
 
     String cardFromReader = "";
 
@@ -491,7 +491,7 @@ public class MainStart {
             notifyError(ex);
         }
         try {
-            pleasewaitAudioIn = AudioSystem.getAudioInputStream(MainStart.class.getResource("/sounds/plswait.wav"));
+            pleasewaitAudioIn = AudioSystem.getAudioInputStream(MainStart.class.getResource("/sounds/vipused.wav"));
             pleaseWaitClip = AudioSystem.getClip();
             pleaseWaitClip.open(pleasewaitAudioIn);
         } catch (Exception ex) {
@@ -611,21 +611,30 @@ public class MainStart {
                     System.out.println("Card Read UID:" + strUID.substring(0, 8));
                     cardFromReader = strUID.substring(0, 8).toUpperCase();
                     DataBaseHandler dbh = new DataBaseHandler();
-                    String cardHolder = dbh.findVIPcard(cardFromReader);                    
+                    String cardHolder = dbh.findVIPcard(cardFromReader);
                     if (cardHolder.compareTo("") != 0) {
                         boolean cardUsed = dbh.isVIPused(cardFromReader);
                         if (cardUsed) {
-                            dbh.sendMessage(0, " VIP : " + cardHolder + " is Already Used", "VIP Entry", "EX01");                            
+                            dbh.sendMessage(0, " VIP : " + cardHolder + " is Already Used", "VIP Entry", "EX01");
+                            try {
+                                if (pleaseWaitClip.isActive() == false) {
+                                    pleaseWaitClip.setFramePosition(0);
+                                    pleaseWaitClip.start();
+                                    System.out.println("VIP Used Message OK");
+                                }
+                            } catch (Exception ex) {
+                                notifyError(ex);
+                            }
                         } else {
                             relayBarrier.low(); //RELAY ON
                             System.out.println("Barrier Open!");
                             boolean isValid = dbh.saveParkerDB(CONSTANTS.serverIP, "P01", "EN01", cardFromReader, "", "V", false);
                             try {
-                                
+
                                 Thread.sleep(500);
                                 relayBarrier.high();
                                 Thread.sleep(1500);
-                                dbh.sendMessage(0, " Welcome " + cardHolder + "", "VIP Entry", "EX01"); 
+                                dbh.sendMessage(0, " Welcome " + cardHolder + "", "VIP Entry", "EX01");
                                 dbh.saveVIPused(cardFromReader);
                             } catch (Exception ex) {
                                 Logger.getLogger(MainStart.class.getName()).log(Level.SEVERE, null, ex);
