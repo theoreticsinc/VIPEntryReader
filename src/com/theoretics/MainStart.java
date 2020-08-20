@@ -314,7 +314,7 @@ public class MainStart {
         System.out.println("Exiting SystemInfoExample");
     }
 
-    public void oldStartProgram() {
+    public void oldStartProgram() { //RFID RC522
         System.out.println(entranceID + " Tap Card Listener " + version);
 //        System.out.println(entranceID + " Tap Card Listener " + version);
         try {
